@@ -35,7 +35,7 @@ function probe_menu() {
  * Page callback for admin/config/probe/self.
  */
 function probe_self() {
-  $info = probe(array(), NULL);
+  $info = probe(array('cron_last'));
 
   if (function_exists('dpm')) {
     dpm($info);
@@ -130,7 +130,8 @@ function probe($variables) {
   }
 
   $vars = array();
-  foreach ($variables as $key) {
+  $variables_filtered = array_intersect($variables, variable_get('probe_variables_whitelist', array('cron_last')));
+  foreach ($variables_filtered as $key) {
     $vars[$key] = variable_get($key, FALSE);
   }
 
