@@ -84,6 +84,7 @@ function probe($variables) {
     'database_updates' => array(),
     'overridden_features' => array(),
     'install_profile' => variable_get('install_profile', ''),
+    'domains' => array(),
   );
 
   // Load all install files.
@@ -167,6 +168,10 @@ function probe($variables) {
   }
   elseif (!($metadata['ema_env'] = variable_get('ezmod_always_environment', ''))) {
     $metadata['ema_env'] = 'unknown';
+  }
+
+  if (module_exists('domain')) {
+    $metadata['domains'] = domain_list_by_machine_name();
   }
 
   // Find the correct platform.
