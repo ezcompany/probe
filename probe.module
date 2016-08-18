@@ -155,6 +155,14 @@ function probe($variables) {
     }
   }
 
+  $apis = array();
+  foreach (module_invoke_all('probe_api_info') as $name => $api) {
+    $apis[$name] = array(
+      'info' => $api,
+      'path' => drupal_get_path('module', $api['implementing_module']),
+    );
+  }
+
   // Number of logs per day.
   if (module_exists('dblog')) {
     $log = db_query('SELECT COUNT(1) logs, MIN(timestamp) min, MAX(timestamp) max FROM {watchdog}')->fetch();
@@ -188,6 +196,7 @@ function probe($variables) {
     'modules' => $modules,
     'libraries' => $libraries,
     'themes' => $themes,
+    'apis' => $apis,
   );
 
   drupal_alter('probe_metadata', $data);
