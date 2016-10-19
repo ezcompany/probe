@@ -1,0 +1,21 @@
+probe.config:
+  path: '/admin/config/probe'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Probe'
+  requirements:
+    _permission: 'access administration pages'
+probe.config_probe:
+  path: '/admin/config/probe/probe'
+  defaults:
+    _form: '\Drupal\probe\Form\ProbeConfigForm'
+    _title: 'Probe settings'
+  requirements:
+    _permission: 'administer site configuration'
+probe.config_probe_self:
+  path: '/admin/config/probe/self'
+  defaults:
+    _controller: '\Drupal\probe\Controller\ProbeController::probeSelf'
+    _title: 'Probe self'
+  requirements:
+    _permission: 'administer site configuration'

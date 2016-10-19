@@ -1,0 +1,5 @@
+{
+    "name": "ezcompany/probe",
+    "description": "This module enables this site to be probed.",
+    "type": "drupal-module"
+}

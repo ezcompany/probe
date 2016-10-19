@@ -1,0 +1,10 @@
+probe.settings:
+  type: mapping
+  label: settings
+  mapping:
+    probe_key:
+      type: string;
+    probe_xmlrpc_ips:
+      type: string;
+    probe_last_probed:
+      type: integer;

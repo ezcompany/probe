@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * Expose API info to the probe module.
  * Implements hook_probe_api_info().
  */
 function hook_probe_api_info() {
