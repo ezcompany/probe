@@ -1,5 +1,0 @@
-services:
-  probe.route_subscriber:
-    class: Drupal\probe\RouteSubscriber
-    tags:
-      - { name: event_subscriber }
