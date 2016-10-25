@@ -4,12 +4,12 @@
  * Contains \Drupal\probe\Form\ProbeConfigForm.
  */
 
- namespace Drupal\probe\Form;
+namespace Drupal\probe\Form;
 
- use Drupal\Core\Form\ConfigFormBase;
- use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\FormStateInterface;
 
- class ProbeConfigForm extends ConfigFormBase {
+class ProbeConfigForm extends ConfigFormBase {
 
   private $configName = 'probe.settings';
 
@@ -50,7 +50,7 @@
    */
   public function getEditableConfigNames() {
     return array(
-      'probe_xmlrpc_ips'
+      'probe_xmlrpc_ips',
     );
   }
 

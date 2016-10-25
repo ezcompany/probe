@@ -42,7 +42,7 @@ class ProbeController extends ControllerBase {
       'root' => array(
         'name' => $root->getUsername(),
         'mail' => $root->getEmail(),
-      )
+      ),
     );
 
     $metadata = array(
