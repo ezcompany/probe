@@ -85,6 +85,7 @@ function probe($variables) {
     'overridden_features' => array(),
     'install_profile' => variable_get('install_profile', ''),
     'domains' => array(),
+    'requirement_issues' => _probe_requirements_status(),
   );
 
   // Load all install files.
@@ -202,6 +203,14 @@ function probe($variables) {
   drupal_alter('probe_metadata', $data);
 
   return $data;
+}
+
+/**
+ * Helper to check for requirements with severity 'REQUIREMENT_ERROR'.
+ */
+function _probe_requirements_status() {
+  module_load_include('inc', 'system', 'system.admin');
+  return system_status(TRUE);
 }
 
 /**
