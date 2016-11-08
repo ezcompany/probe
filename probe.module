@@ -11,7 +11,7 @@ function probe_xmlrpc() {
       'array', // The first value is the return type, an array in this case.
       'array', // An array with requested variables.
     ),
-    t('@TODO'),
+    t('Exposes this website\'s internal details for monitoring updates, logs and other metadata. Access is only granted if the requester\'s IP is whitelisted or has sent a valid "probe_key".'),
   );
 
   return $methods;
