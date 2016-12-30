@@ -1,5 +1,8 @@
 {
     "name": "ezcompany/probe",
     "description": "This module enables this site to be probed.",
-    "type": "drupal-module"
+    "type": "drupal-module",
+    "require": {
+        "drupal/xmlrpc": "1.0-beta1"
+    }
 }
