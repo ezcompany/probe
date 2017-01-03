@@ -59,6 +59,7 @@ class ProbeController extends ControllerBase {
       'logs' => $this->getDblogDailyAverage(),
       // Made a guess for what the Drupal 8 ezmod_always setting will look like.
       'ema_env' => Settings::get('ezmod_always_environment', 'no_ema'),
+      'requirement_issues' => $this->getRequirementsStatus(),
     );
 
     $data = array(
@@ -347,6 +348,13 @@ class ProbeController extends ControllerBase {
       );
     }
     return $apis;
+  }
+
+  /*
+   * Helper to determine if there are requirement errors.
+   */
+  protected function getRequirementsStatus() {
+    return \Drupal::service('system.manager')->checkRequirements();
   }
 
   /**
