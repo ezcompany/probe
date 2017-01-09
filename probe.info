@@ -2,4 +2,5 @@
 name = Probe
 description = This enables this site to be probed.
 package = Probe
+version = 7.x-1.1
 core = 7.x
