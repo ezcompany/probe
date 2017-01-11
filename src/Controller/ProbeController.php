@@ -7,19 +7,35 @@
 namespace Drupal\probe\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Database\Database;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Site\Settings;
+use Drupal\system\SystemManager;
 use Drupal\user\Entity\User;
-use Drupal\features\FeaturesManagerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class ProbeController extends ControllerBase {
 
-  protected $moduleHandler;
-  protected $db;
+  protected $database;
+  protected $currentRequest;
+  protected $themeHandler;
+  protected $systemManager;
 
-  public function __construct() {
-    $this->moduleHandler = \Drupal::moduleHandler();
-    $this->db = Database::getConnection();
+  public function __construct(SystemManager $systemManager, Connection $connection, RequestStack $requestStack, ThemeHandlerInterface $themeHandler) {
+    $this->database = $connection;
+    $this->systemManager = $systemManager;
+    $this->currentRequest = $requestStack->getCurrentRequest();
+    $this->themeHandler = $themeHandler;
+  }
+
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('system.manager'),
+      $container->get('database'),
+      $container->get('request_stack'),
+      $container->get('theme_handler')
+    );
   }
 
   /**
@@ -31,24 +47,26 @@ class ProbeController extends ControllerBase {
       return $access;
     }
 
+    global $base_url;
+
     // Update last probed time.
-    \Drupal::configFactory()->getEditable('probe.settings')->set('probe_last_probed', REQUEST_TIME)->save();
-    \Drupal::logger('probe')->info('Just got probed by @ip', array('@ip' => \Drupal::request()->getClientIp()));
+    $this->configFactory->getEditable('probe.settings')->set('probe_last_probed', REQUEST_TIME)->save();
+    $this->getLogger('probe')->info('Just got probed by @ip', array('@ip' => $this->currentRequest->getClientIp()));
 
-    $moduleList = $this->moduleHandler->getModuleList();
+    $moduleList = $this->moduleHandler()->getModuleList();
 
-    $root = User::load(1);
+    $rootUser = User::load(1);
     $users = array(
       'root' => array(
-        'name' => $root->getUsername(),
-        'mail' => $root->getEmail(),
+        'name' => $rootUser->getUsername(),
+        'mail' => $rootUser->getEmail(),
       ),
     );
 
     $metadata = array(
       'drupal_version' => \Drupal::VERSION,
-      'drupal_root' => \Drupal::root(),
-      'base_url' => $GLOBALS['base_url'],
+      'drupal_root' => DRUPAL_ROOT,
+      'base_url' => $base_url,
       'num_users' => $this->getUsersPerStatus(),
       'num_users_roles' => $this->getUsersPerRole(),
       'num_nodes_type' => $this->getNodesPerTypePerStatus(),
@@ -62,12 +80,14 @@ class ProbeController extends ControllerBase {
       'requirement_issues' => $this->getRequirementsStatus(),
     );
 
+    $system_config = $this->config('system.site');
+
     $data = array(
       'users' => $users,
       'variables' => $this->getVariablesDetails($variables),
       'platform' => $metadata['install_profile'],
-      'site_name' => \Drupal::config('system.site')->get('name'),
-      'site_mail' => \Drupal::config('system.site')->get('mail'),
+      'site_name' => $system_config->get('name'),
+      'site_mail' => $system_config->get('mail'),
       'metadata' => $metadata,
       'modules' => $this->getModuleDetails($moduleList),
       'libraries' => $this->getLibraryDetails(),
@@ -101,8 +121,7 @@ class ProbeController extends ControllerBase {
    * Helper to get the requested variables.
    */
   protected function getVariablesDetails($variables = array()) {
-    $probeConfig = \Drupal::configFactory()->get('probe.settings');
-    $stateService = \Drupal::service('state');
+    $probeConfig = $this->config('probe.settings');
 
     $variablesWhitelist = $probeConfig->get('probe_variables_whitelist') ?: array('cron_last', 'system.cron_last');
     $variablesFiltered = array_intersect($variables, $variablesWhitelist);
@@ -118,7 +137,7 @@ class ProbeController extends ControllerBase {
       $value = $probeConfig->get($key);
       // If it's not in Probe settings, try system state otherwise just return FALSE.
       if ($value === NULL) {
-        $value = $stateService->get($key) ?: FALSE;
+        $value = $this->state()->get($key) ?: FALSE;
       }
       $vars[$key] = $value;
     }
@@ -130,7 +149,7 @@ class ProbeController extends ControllerBase {
    * Helper to get the number of users per status.
    */
   protected function getUsersPerStatus() {
-    $query = $this->db->select('users_field_data', 'u')
+    $query = $this->database->select('users_field_data', 'u')
       ->fields('u', array('status'))
       ->condition('uid', 0, '<>')
       ->groupBy('status');
@@ -143,7 +162,7 @@ class ProbeController extends ControllerBase {
    * Helper to get the number of users per role per status.
    */
   protected function getUsersPerRole() {
-    $query = $this->db->select('users_field_data', 'u')
+    $query = $this->database->select('users_field_data', 'u')
       ->fields('u', array('status'))
       ->fields('ur', array('roles_target_id'));
     $query->join('user__roles', 'ur', 'ur.entity_id = u.uid');
@@ -157,10 +176,10 @@ class ProbeController extends ControllerBase {
     }
 
     // Get the role labels instead of ids.
-    $roles = \Drupal::entityTypeManager()->getStorage('user_role')->loadMultiple(array_keys($num_users));
+    $roles = $this->entityTypeManager()->getStorage('user_role')->loadMultiple();
     $role_users = array();
     foreach ($roles as $role) {
-      $role_users[$role->label()] = $num_users[$role->id()];
+      $role_users[$role->label()] = empty($num_users[$role->id()]) ? 0 : $num_users[$role->id()];
     }
 
     return $role_users;
@@ -170,7 +189,7 @@ class ProbeController extends ControllerBase {
    * Helper to get the number of nodes per type per status.
    */
   protected function getNodesPerTypePerStatus() {
-    $query = $this->db->select('node_field_data', 'n')
+    $query = $this->database->select('node_field_data', 'n')
       ->fields('n', array('type', 'status'));
     $query->addExpression('COUNT(1)', 'num');
     $query->groupBy('type');
@@ -184,18 +203,25 @@ class ProbeController extends ControllerBase {
 
   /**
    * Helper to get all feature overrides, returns an empty array if the module isn't enabled.
+   *
+   * @todo Needs more testing with the module Features.
    */
   protected function getFeatureOverrides() {
     $features = array();
     if ($this->moduleHandler->moduleExists('features')) {
+      /** @var \Drupal\features\FeaturesAssignerInterface $featuresAssigner */
+      $featuresAssigner = \Drupal::service('features_assigner');
+
       // Initialize features so it can actually find overrides.
-      \Drupal::service('features_assigner')->applyBundle();
-      // Doing the magic.
-      $featureMgr = \Drupal::service('features.manager');
-      $packages = $featureMgr->getPackages();
-      foreach ($packages as $package) {
-        if ($package->getStatus() != FeaturesManagerInterface::STATUS_NO_EXPORT) {
-          $overrides = $featureMgr->detectOverrides($package, TRUE);
+      $featuresAssigner->applyBundle();
+
+      /** @var \Drupal\features\FeaturesManagerInterface $featureManager */
+      $featureManager = \Drupal::service('features.manager');
+
+      /** @var \Drupal\features\Package $package */
+      foreach ($featureManager->getPackages() as $package) {
+        if ($package->getStatus() != $featureManager::STATUS_NO_EXPORT) {
+          $overrides = $featureManager->detectOverrides($package, TRUE);
           $features[$package->getMachineName()] = $overrides;
         }
       }
@@ -205,21 +231,26 @@ class ProbeController extends ControllerBase {
 
   /**
    * Helper to get all domain module data, returns an empty array if the module isn't enabled.
+   *
+   * @todo Needs more testing with the module Domain & Domain Alias.
    */
   protected function getDomainsDetails() {
     $domains = array();
     if ($this->moduleHandler->moduleExists('domain')) {
+      /** @var \Drupal\domain\DomainLoaderInterface $domainLoader */
       $domainLoader = \Drupal::service('domain.loader');
-      foreach ($domainLoader->loadMultiple() as $name => $domain) {
-        $domains[$name] = array(
-          'domain_id' => $domain->id(),
+
+      /** @var \Drupal\domain\DomainInterface $domain */
+      foreach ($domainLoader->loadMultipleSorted() as $domain) {
+        $domains[$domain->getDomainId()] = array(
+          'domain_id' => $domain->getDomainId(),
           'subdomain' => $domain->getHostname(),
           'sitename' => $domain->label(),
           'scheme' => $domain->getScheme(),
           'valid' => 1, // Valid is no longer present, so just return that it is always valid.
           'weight' => $domain->getWeight(),
           'is_default' => (int) $domain->isDefault(),
-          'machine_name' => $name,
+          'machine_name' => $domain->id(),
           'path' => $domain->getPath(),
           // Similar for site_grant was basically always true in drupal 7 unless you changed the DOMAIN_SITE_GRANT value. Seems to be gone from the d8 domain module.
           'site_grant' => defined('DOMAIN_SITE_GRANT') ? DOMAIN_SITE_GRANT : TRUE,
@@ -228,8 +259,11 @@ class ProbeController extends ControllerBase {
       }
 
       if ($this->moduleHandler->moduleExists('domain_alias')) {
+        /** @var \Drupal\domain_alias\DomainAliasLoaderInterface $aliasLoader */
         $aliasLoader = \Drupal::service('domain_alias.loader');
-        foreach ($aliasLoader->loadMultiple() as $name => $alias) {
+
+        /** @var \Drupal\domain_alias\DomainAliasInterface $alias */
+        foreach ($aliasLoader->loadMultiple() as $alias) {
           $domains[$alias->getDomainId()]['aliases'][$alias->id()] = array(
             'domain_id' => $alias->getDomainId(),
             'alias_id' => $alias->id(),
@@ -246,7 +280,7 @@ class ProbeController extends ControllerBase {
    * Helper to get the average daily logs.
    */
   protected function getDblogDailyAverage() {
-    $query = $this->db->select('watchdog', 'w');
+    $query = $this->database->select('watchdog', 'w');
     $query->addExpression('COUNT(1)', 'logs');
     $query->addExpression('MIN(timestamp)', 'min');
     $query->addExpression('MAX(timestamp)', 'max');
@@ -264,12 +298,15 @@ class ProbeController extends ControllerBase {
   protected function getModuleDetails(array $modules) {
     $systemInfo = system_get_info('module');
     $detailedModules = array();
-    foreach ($systemInfo as $module => $details) {
+    /** @var \Drupal\Core\Extension\Extension $module */
+    foreach ($modules as $module) {
       // Copy the time to the probe ui expected key.
-      $details['_info_file_ctime'] = $details['mtime'];
-      $detailedModules[$module] = array(
-        'info' => $details,
-        'path' => \Drupal::root() . '/' . $modules[$module]->getPath(),
+      $data = unserialize($module->serialize());
+      $data['_info_file_ctime'] = $systemInfo[$module->getName()]['mtime'];
+
+      $detailedModules[$module->getName()] = array(
+        'info' => $data,
+        'path' => DRUPAL_ROOT . '/' . $module->getPath(),
       );
     }
     return $detailedModules;
@@ -282,7 +319,7 @@ class ProbeController extends ControllerBase {
     // Reset the static cache otherwise drupal_get_schema_versions uses a cached version without the included .install files.
     drupal_static_reset('drupal_get_schema_versions');
     // Load all install files.
-    include_once \Drupal::root() . '/core/includes/install.inc';
+    include_once DRUPAL_ROOT . '/core/includes/install.inc';
     drupal_load_updates();
 
     $modUpdates = array();
@@ -302,15 +339,16 @@ class ProbeController extends ControllerBase {
 
   /**
    * Helper to get info for external libraries using the libraries module.
+   *
+   * @todo Needs more testing with the module Libraries.
    */
   protected function getLibraryDetails() {
     $libraries = array();
     if ($this->moduleHandler->moduleExists('libraries')) {
       try {
-        // TODO When external libraries are added in one of our drupal 8 installs properly test this part.
         $libraries = $this->moduleHandler->invokeAll('library_info_build');
       } catch (\Exception $e) {
-        \Drupal::logger('probe')->error('Couldn\'t load library info due to a misconfiguration or missing dependencies with message: @message', array('@message' => $e->getMessage()));
+        $this->getLogger('probe')->error('Couldn\'t load library info due to a misconfiguration or missing dependencies with message: @message', array('@message' => $e->getMessage()));
       }
     }
     return $libraries;
@@ -320,12 +358,13 @@ class ProbeController extends ControllerBase {
    * Helper to get info for all enabled themes.
    */
   protected function getThemeDetails() {
-    $themeHandler = \Drupal::service('theme_handler');
     $themes = array();
-    foreach ($themeHandler->listInfo() as $name => $theme) {
-      $themes[$name] = array(
-        'info' => $theme->info,
-        'path' => \Drupal::root() . '/' . $theme->getPath(),
+    /** @var \Drupal\Core\Extension\Extension $theme */
+    foreach ($this->themeHandler->listInfo() as $theme) {
+      $data = unserialize($theme->serialize());
+      $themes[$theme->getName()] = array(
+        'info' => $data['info'],
+        'path' => DRUPAL_ROOT . '/' . $theme->getPath(),
       );
     }
     return $themes;
@@ -339,7 +378,7 @@ class ProbeController extends ControllerBase {
     foreach ($this->moduleHandler->invokeAll('probe_api_info') as $name => $api) {
       $path = drupal_get_path('module', $api['implementing_module']);
       if (!$path) {
-        $path = 'Implementing module \'' . $api['implementing_module'] . '\'not found.';
+        $path = $this->t('Implementing module %module not found.', array('%module' => $api['implementing_module']));
       }
 
       $apis[$name] = array(
@@ -350,34 +389,35 @@ class ProbeController extends ControllerBase {
     return $apis;
   }
 
-  /*
+  /**
    * Helper to determine if there are requirement errors.
    */
   protected function getRequirementsStatus() {
-    return \Drupal::service('system.manager')->checkRequirements();
+    return $this->systemManager->checkRequirements();
   }
 
   /**
    * Helper function to determin access to the XMLRPC call.
    */
   protected function hasXmlrpcAccess() {
-    $config = \Drupal::config('probe.settings');
-    $incoming_probe_key = @$_REQUEST['probe_key'];
+    $config = $this->config('probe.settings');
+
+    $incoming_probe_key = $this->currentRequest->query->get('probe_key');
     $allowed_probe_key = trim($config->get('probe_key'));
     if ($incoming_probe_key && $incoming_probe_key === $allowed_probe_key) {
       return TRUE;
     }
 
     // Check for sender IP whitelist.
-    $incoming_ip = \Drupal::request()->getClientIp();
+    $incoming_ip = $this->currentRequest->getClientIp();
     $allowed_ips = array_filter(preg_split('#(\r\n|\r|\n)#', $config->get('probe_xmlrpc_ips')));
     if (in_array($incoming_ip, $allowed_ips)) {
       return TRUE;
     }
 
     // Access denied, generic message.
-    include_once drupal_get_path('module', 'xmlrpc') . '/xmlrpc.inc';
-    return xmlrpc_error(403, t('Access denied for this IP (@ip) and probe key (@probe_key).', array(
+    module_load_include('inc', 'xmlrpc', 'xmlrpc');
+    return xmlrpc_error(403, $this->t('Access denied for this IP (@ip) and probe key (@probe_key).', array(
       '@ip' => $incoming_ip,
       '@probe_key' => $incoming_probe_key,
     )));
