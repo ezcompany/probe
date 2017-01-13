@@ -103,16 +103,24 @@ class ProbeController extends ControllerBase {
    */
   public function probeSelf() {
     $data = $this->probe(array('system.cron_last'));
-    $markup = '';
-    if (function_exists('dpm')) {
-      dpm($data);
-    }
-    else {
-      $markup = '<pre>' . var_export($data, TRUE) . '</pre>';
+
+    // Kint Module.
+    if ($this->moduleHandler()->moduleExists('kint')) {
+      ksm($data);
+      return array();
     }
 
+    // Devel Module.
+    if ($this->moduleHandler()->moduleExists('devel')) {
+      dpm($data);
+      return array();
+    }
+
+    // Drupal Core.
+    $markup = '<pre>' . var_export($data, TRUE) . '</pre>';
     return array(
-      '#type' => 'markup',
+      '#type' => 'item',
+      '#title' => $this->t('Retrieved data'),
       '#markup' => $markup,
     );
   }

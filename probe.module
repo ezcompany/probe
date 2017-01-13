@@ -6,7 +6,7 @@
 function probe_xmlrpc() {
   $methods[] =  array(
     'probe', // First argument is the method name.
-    'probe_xml_request', // Callback to execute when this method is requested.
+    '\Drupal\probe\Controller\ProbeController::probe', // Callback to execute when this method is requested.
     array( // An array defines the types of output and input values for this method.
       'array', // The first value is the return type, an array in this case.
       'array', // An array with requested variables.
@@ -15,12 +15,4 @@ function probe_xmlrpc() {
   );
 
   return $methods;
-}
-
-/**
- * Callback for probe_xmlrpc().
- */
-function probe_xml_request($variables = array()) {
-  $controller = new \Drupal\probe\Controller\ProbeController();
-  return $controller->probe($variables);
 }

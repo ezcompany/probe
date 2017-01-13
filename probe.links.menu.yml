@@ -1,18 +1,10 @@
-probe.admin:
-  title: 'Probe'
-  description: ''
-  parent: system.admin_config
-  route_name: probe.config
-  weight: 10
 probe.admin_probe:
-  title: 'Probe settings'
-  description: 'Configure the Probe client.'
-  parent: probe.admin
-  route_name: probe.config_probe
-  weight: 10
+  title: 'Probe Settings'
+  description: 'Setup the Probe client.'
+  parent: system.admin_config_services
+  route_name: probe.config
 probe.admin_probe_self:
-  title: 'Probe self'
-  description: 'Go Probe yourself.'
-  parent: probe.admin
-  route_name: probe.config_probe_self
-  weight: 20
+  title: 'Probe Test'
+  description: 'Test probe.'
+  parent: probe.config
+  route_name: probe.self

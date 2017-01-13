@@ -1,0 +1,8 @@
+probe.settings_tab:
+  route_name: probe.config
+  title: Settings
+  base_route: probe.settings_tab
+probe.self_tab:
+  route_name: probe.self
+  title: Test
+  base_route: probe.settings_tab
