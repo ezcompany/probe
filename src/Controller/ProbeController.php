@@ -102,7 +102,26 @@ class ProbeController extends ControllerBase {
    * Presents this sites probe data to the user.
    */
   public function probeSelf() {
-    $data = $this->probe(array('system.cron_last'));
+    global $base_url;
+
+    // Set up default request.
+    // Set up default request.
+    $args = array(
+      'probe' => array(
+        array(
+          'cron_last',
+        )
+      ),
+    );
+
+    $options = array();
+
+    // @todo verify the working with an invalid SSL-certificate.
+    if ($this->currentRequest->isSecure()) {
+      $options['context'] = stream_context_create(array('ssl' => array('verify_peer' => FALSE)));
+    }
+
+    $data = xmlrpc($base_url . '/xmlrpc', $args, $options);
 
     // Kint Module.
     if ($this->moduleHandler()->moduleExists('kint')) {
@@ -118,11 +137,10 @@ class ProbeController extends ControllerBase {
 
     // Drupal Core.
     $markup = '<pre>' . var_export($data, TRUE) . '</pre>';
-    return array(
+    return [
       '#type' => 'item',
-      '#title' => $this->t('Retrieved data'),
       '#markup' => $markup,
-    );
+    ];
   }
 
   /**
