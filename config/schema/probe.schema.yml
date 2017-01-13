@@ -6,5 +6,3 @@ probe.settings:
       type: string;
     probe_xmlrpc_ips:
       type: string;
-    probe_last_probed:
-      type: integer;

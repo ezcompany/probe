@@ -50,7 +50,7 @@ class ProbeController extends ControllerBase {
     global $base_url;
 
     // Update last probed time.
-    $this->configFactory->getEditable('probe.settings')->set('probe_last_probed', REQUEST_TIME)->save();
+    $this->state()->set('probe.probe_last', REQUEST_TIME);
     $this->getLogger('probe')->info('Just got probed by @ip', array('@ip' => $this->currentRequest->getClientIp()));
 
     $moduleList = $this->moduleHandler()->getModuleList();
