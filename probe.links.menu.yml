@@ -1,10 +1,5 @@
 probe.admin_probe:
-  title: 'Probe Settings'
+  title: 'Probe'
   description: 'Setup the Probe client.'
   parent: system.admin_config_services
   route_name: probe.config
-probe.admin_probe_self:
-  title: 'Probe Test'
-  description: 'Test probe.'
-  parent: probe.config
-  route_name: probe.self
