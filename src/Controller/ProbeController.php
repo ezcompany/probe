@@ -324,14 +324,14 @@ class ProbeController extends ControllerBase {
   protected function getModuleDetails(array $modules) {
     $systemInfo = system_get_info('module');
     $detailedModules = array();
+
     /** @var \Drupal\Core\Extension\Extension $module */
     foreach ($modules as $module) {
       // Copy the time to the probe ui expected key.
       $data = unserialize($module->serialize());
-      $data['_info_file_ctime'] = $systemInfo[$module->getName()]['mtime'];
 
       $detailedModules[$module->getName()] = array(
-        'info' => $data,
+        'info' => $data + $systemInfo[$module->getName()],
         'path' => DRUPAL_ROOT . '/' . $module->getPath(),
       );
     }
