@@ -169,6 +169,10 @@ function probe($variables) {
     $log = db_query('SELECT COUNT(1) logs, MIN(timestamp) min, MAX(timestamp) max FROM {watchdog}')->fetch();
     $days = $log->max > $log->min ? max(1, ($log->max - $log->min) / 86400) : 0;
     $metadata['logs'] = $log->logs && $days ? $log->logs / $days : 0;
+
+    $log_severe = db_query('SELECT COUNT(1) logs, MIN(timestamp) min, MAX(timestamp) max FROM {watchdog} WHERE (severity < :notice OR (severity < :info AND type = :php))', array(':notice' => WATCHDOG_NOTICE, ':info' => WATCHDOG_INFO, ':php' => 'php'))->fetch();
+    $days = $log_severe->max > $log_severe->min ? max(1, ($log_severe->max - $log_severe->min) / 86400) : 0;
+    $metadata['logs_severe'] = $log_severe->logs && $days ? $log_severe->logs / $days : 0;
   }
 
   // EMA environment.
