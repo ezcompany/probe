@@ -1,12 +1,12 @@
 probe.config:
-  path: '/admin/config/service/probe'
+  path: '/admin/config/services/probe'
   defaults:
     _form: '\Drupal\probe\Form\ProbeConfigForm'
     _title: 'Probe'
   requirements:
     _permission: 'administer site configuration'
 probe.self:
-  path: '/admin/config/service/probe/self'
+  path: '/admin/config/services/probe/self'
   defaults:
     _controller: '\Drupal\probe\Controller\ProbeController::probeSelf'
     _title: 'Probe'
