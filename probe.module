@@ -1,18 +1,30 @@
 <?php
 
 /**
+ * @file
+ * Hook implementations for this module.
+ */
+
+use Drupal\probe\Controller\ProbeController;
+
+/**
  * Implements hook_xmlrpc().
  */
 function probe_xmlrpc() {
-  $methods[] =  array(
-    'probe', // First argument is the method name.
-    'probe_xml_request', // Callback to execute when this method is requested.
-    array( // An array defines the types of output and input values for this method.
-      'array', // The first value is the return type, an array in this case.
-      'array', // An array with requested variables.
-    ),
-    t('Exposes this website\'s internal details for monitoring updates, logs and other metadata. Access is only granted if the requester\'s IP is whitelisted or has sent a valid "probe_key".'),
-  );
+  $methods[] = [
+    // First argument is the method name.
+    'probe',
+    // Callback to execute when this method is requested.
+    'probe_xml_request',
+    // An array defines the types of output and input values for this method.
+    [
+      // The first value is the return type, an array in this case.
+      'array',
+      // An array with requested variables.
+      'array',
+    ],
+    t("Exposes this website's internal details for monitoring updates, logs and other metadata. Access is only granted if the requester's IP is whitelisted or has sent a valid 'probe_key'."),
+  ];
 
   return $methods;
 }
@@ -20,7 +32,7 @@ function probe_xmlrpc() {
 /**
  * Callback for probe_xmlrpc().
  */
-function probe_xml_request($variables = array()) {
-  $controller = \Drupal\probe\Controller\ProbeController::create(\Drupal::getContainer());
+function probe_xml_request($variables = []) {
+  $controller = ProbeController::create(\Drupal::getContainer());
   return $controller->probe($variables);
 }

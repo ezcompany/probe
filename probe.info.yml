@@ -2,7 +2,6 @@ name: Probe
 description: This enables this site to be probed.
 package: Probe
 type: module
-version: 8.x-1.1
 core: 8.x
 
 dependencies:
