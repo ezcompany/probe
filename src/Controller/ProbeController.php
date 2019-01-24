@@ -120,14 +120,7 @@ class ProbeController extends ControllerBase {
       ],
     ];
 
-    $options = [];
-
-    // @todo verify the working with an invalid SSL-certificate.
-    if ($this->currentRequest->isSecure()) {
-      $options['context'] = stream_context_create(['ssl' => ['verify_peer' => FALSE]]);
-    }
-
-    $data = xmlrpc($base_url . '/xmlrpc', $args, $options);
+    $data = xmlrpc($base_url . '/xmlrpc', $args);
 
     // Kint Module.
     if ($this->moduleHandler()->moduleExists('kint')) {
