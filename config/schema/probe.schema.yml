@@ -1,8 +1,11 @@
+# Schema for the configuration file of the Probe module.
 probe.settings:
-  type: mapping
-  label: settings
+  type: config_object
+  label: 'Probe settings'
   mapping:
     probe_key:
-      type: string;
+      label: 'Secret key'
+      type: string
     probe_xmlrpc_ips:
-      type: string;
+      label: 'Allowed IP addresses for Probe XMLRPC calls'
+      type: string
