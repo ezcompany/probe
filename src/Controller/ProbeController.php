@@ -331,18 +331,20 @@ class ProbeController extends ControllerBase {
 
   /**
    * Helper to get additional details from all modules.
+   *
+   * @param \Drupal\Core\Extension\Extension[] $modules
+   *   An array of Extensions.
+   *
+   * @return array[]
+   *   An associative array of module details keyed by module machine name.
    */
   protected function getModuleDetails(array $modules) {
     $systemInfo = system_get_info('module');
     $detailedModules = [];
 
-    /** @var \Drupal\Core\Extension\Extension $module */
     foreach ($modules as $module) {
-      // Copy the time to the probe ui expected key.
-      $data = unserialize($module->serialize());
-
       $detailedModules[$module->getName()] = [
-        'info' => $data + $systemInfo[$module->getName()],
+        'info' => $systemInfo[$module->getName()],
         'path' => DRUPAL_ROOT . '/' . $module->getPath(),
       ];
     }
