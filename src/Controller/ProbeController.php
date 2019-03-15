@@ -399,12 +399,12 @@ class ProbeController extends ControllerBase {
    * Helper to get info for all enabled themes.
    */
   protected function getThemeDetails() {
+    $systemInfo = system_get_info('theme');
     $themes = [];
     /** @var \Drupal\Core\Extension\Extension $theme */
     foreach ($this->themeHandler->listInfo() as $theme) {
-      $data = unserialize($theme->serialize());
       $themes[$theme->getName()] = [
-        'info' => $data['info'],
+        'info' => $systemInfo[$theme->getName()],
         'path' => DRUPAL_ROOT . '/' . $theme->getPath(),
       ];
     }
