@@ -1,6 +1,7 @@
 {
     "name": "ezcompany/probe",
     "description": "This module enables this site to be probed.",
+    "homepage": "https://github.com/ezcompany/probe",
     "type": "drupal-module",
     "license": "GPL-2.0-or-later",
     "require": {
