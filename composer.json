@@ -2,8 +2,5 @@
     "name": "ezcompany/probe",
     "description": "This module enables this site to be probed.",
     "homepage": "https://gitlab.hosted-tools.com/ezcompany/probe",
-    "type": "drupal-module",
-    "require": {
-        "drupal/xmlrpc": "1.0-beta1"
-    }
+    "type": "drupal-module"
 }
