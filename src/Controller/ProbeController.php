@@ -278,8 +278,7 @@ class ProbeController extends ControllerBase {
   protected function getDomainsDetails() {
     $domains = [];
     if ($this->moduleHandler->moduleExists('domain')) {
-      /** @var \Drupal\domain\DomainLoaderInterface $domainLoader */
-      $domainLoader = \Drupal::service('domain.loader');
+      $domainLoader = \Drupal::service('entity_type.manager')->getStorage('domain');
 
       /** @var \Drupal\domain\DomainInterface $domain */
       foreach ($domainLoader->loadMultipleSorted() as $domain) {
