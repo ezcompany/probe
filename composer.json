@@ -5,6 +5,6 @@
     "type": "drupal-module",
     "license": "GPL-2.0-or-later",
     "require": {
-        "drupal/xmlrpc": "1.0-beta1"
+        "drupal/xmlrpc": "^1.0-beta1"
     }
 }
