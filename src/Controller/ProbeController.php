@@ -397,9 +397,8 @@ class ProbeController extends ControllerBase {
    * Helper to get info for all enabled themes.
    */
   protected function getThemeDetails() {
-    $systemInfo = system_get_info('theme');
+    $systemInfo = \Drupal::service('extension.list.theme')->getAllInstalledInfo();
     $themes = [];
-    /** @var \Drupal\Core\Extension\Extension $theme */
     foreach ($this->themeHandler->listInfo() as $theme) {
       $themes[$theme->getName()] = [
         'info' => $systemInfo[$theme->getName()],
