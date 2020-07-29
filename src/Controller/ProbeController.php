@@ -120,14 +120,7 @@ class ProbeController extends ControllerBase {
       ],
     ];
 
-    $options = [];
-
-    // @todo verify the working with an invalid SSL-certificate.
-    if ($this->currentRequest->isSecure()) {
-      $options['context'] = stream_context_create(['ssl' => ['verify_peer' => FALSE]]);
-    }
-
-    $data = xmlrpc($base_url . '/xmlrpc', $args, $options);
+    $data = xmlrpc($base_url . '/xmlrpc', $args);
 
     // Kint Module.
     if ($this->moduleHandler()->moduleExists('kint')) {
@@ -302,8 +295,7 @@ class ProbeController extends ControllerBase {
       }
 
       if ($this->moduleHandler->moduleExists('domain_alias')) {
-        /** @var \Drupal\domain_alias\DomainAliasLoaderInterface $aliasLoader */
-        $aliasLoader = \Drupal::service('domain_alias.loader');
+        $aliasLoader = \Drupal::service('entity_type.manager')->getStorage('domain_alias');
 
         /** @var \Drupal\domain_alias\DomainAliasInterface $alias */
         foreach ($aliasLoader->loadMultiple() as $alias) {
@@ -337,18 +329,20 @@ class ProbeController extends ControllerBase {
 
   /**
    * Helper to get additional details from all modules.
+   *
+   * @param \Drupal\Core\Extension\Extension[] $modules
+   *   An array of Extensions.
+   *
+   * @return array[]
+   *   An associative array of module details keyed by module machine name.
    */
   protected function getModuleDetails(array $modules) {
     $systemInfo = system_get_info('module');
     $detailedModules = [];
 
-    /** @var \Drupal\Core\Extension\Extension $module */
     foreach ($modules as $module) {
-      // Copy the time to the probe ui expected key.
-      $data = unserialize($module->serialize());
-
       $detailedModules[$module->getName()] = [
-        'info' => $data + $systemInfo[$module->getName()],
+        'info' => $systemInfo[$module->getName()],
         'path' => DRUPAL_ROOT . '/' . $module->getPath(),
       ];
     }
@@ -403,12 +397,12 @@ class ProbeController extends ControllerBase {
    * Helper to get info for all enabled themes.
    */
   protected function getThemeDetails() {
+    $systemInfo = system_get_info('theme');
     $themes = [];
     /** @var \Drupal\Core\Extension\Extension $theme */
     foreach ($this->themeHandler->listInfo() as $theme) {
-      $data = unserialize($theme->serialize());
       $themes[$theme->getName()] = [
-        'info' => $data['info'],
+        'info' => $systemInfo[$theme->getName()],
         'path' => DRUPAL_ROOT . '/' . $theme->getPath(),
       ];
     }
