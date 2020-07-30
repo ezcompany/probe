@@ -65,7 +65,7 @@ class ProbeController extends ControllerBase {
     $rootUser = User::load(1);
     $users = [
       'root' => [
-        'name' => $rootUser->getUsername(),
+        'name' => $rootUser->getDisplayName(),
         'mail' => $rootUser->getEmail(),
       ],
     ];
@@ -79,7 +79,7 @@ class ProbeController extends ControllerBase {
       'num_nodes_type' => $this->getNodesPerTypePerStatus(),
       'database_updates' => $this->getModulesWithUpdates($moduleList),
       'overridden_features' => $this->getFeatureOverrides(),
-      'install_profile' => drupal_get_profile(),
+      'install_profile' => \Drupal::installProfile(),
       'domains' => $this->getDomainsDetails(),
       'logs' => $this->getDblogDailyAverage(),
       // Made a guess for what the Drupal 8 ezmod_always setting will look like.
@@ -337,7 +337,7 @@ class ProbeController extends ControllerBase {
    *   An associative array of module details keyed by module machine name.
    */
   protected function getModuleDetails(array $modules) {
-    $systemInfo = system_get_info('module');
+    $systemInfo = \Drupal::service('extension.list.module')->getAllInstalledInfo();
     $detailedModules = [];
 
     foreach ($modules as $module) {
@@ -397,9 +397,8 @@ class ProbeController extends ControllerBase {
    * Helper to get info for all enabled themes.
    */
   protected function getThemeDetails() {
-    $systemInfo = system_get_info('theme');
+    $systemInfo = \Drupal::service('extension.list.theme')->getAllInstalledInfo();
     $themes = [];
-    /** @var \Drupal\Core\Extension\Extension $theme */
     foreach ($this->themeHandler->listInfo() as $theme) {
       $themes[$theme->getName()] = [
         'info' => $systemInfo[$theme->getName()],
