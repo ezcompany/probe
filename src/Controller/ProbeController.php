@@ -73,6 +73,9 @@ class ProbeController extends ControllerBase {
     $metadata = [
       'drupal_version' => \Drupal::VERSION,
       'drupal_root' => DRUPAL_ROOT,
+      'php_version' => phpversion(),
+      'free_disk_space' => disk_free_space(DRUPAL_ROOT),
+      'total_disk_space' => disk_total_space(DRUPAL_ROOT),
       'base_url' => $base_url,
       'num_users' => $this->getUsersPerStatus(),
       'num_users_roles' => $this->getUsersPerRole(),
