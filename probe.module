@@ -77,6 +77,9 @@ function probe($variables) {
   $metadata = array(
     'drupal_version' => VERSION,
     'drupal_root' => DRUPAL_ROOT,
+    'php_version' => phpversion(),
+    'free_disk_space' => disk_free_space(DRUPAL_ROOT),
+    'total_disk_space' => disk_total_space(DRUPAL_ROOT),
     'base_url' => $GLOBALS['base_url'],
     'num_users' => _probe_users(),
     'num_users_roles' => _probe_users_roles(),
