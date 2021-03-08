@@ -54,6 +54,18 @@ class ProbeController extends ControllerBase {
       return $access;
     }
 
+    $maintenance = $this->state()->get('system.maintenance_mode');
+
+    if ($maintenance == TRUE) {
+      return [
+        'metadata' => [
+          'variables' => [
+            'maintenance_mode' => TRUE
+          ],
+        ],
+      ];
+    }
+
     global $base_url;
 
     // Update last probed time.
