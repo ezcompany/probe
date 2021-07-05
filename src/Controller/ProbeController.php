@@ -88,6 +88,7 @@ class ProbeController extends ControllerBase {
       'php_version' => phpversion(),
       'free_disk_space' => disk_free_space(DRUPAL_ROOT),
       'total_disk_space' => disk_total_space(DRUPAL_ROOT),
+      'database' => $this->getDatabaseInfo(),
       'base_url' => $base_url,
       'num_users' => $this->getUsersPerStatus(),
       'num_users_roles' => $this->getUsersPerRole(),
@@ -157,6 +158,31 @@ class ProbeController extends ControllerBase {
       '#type' => 'item',
       '#markup' => $markup,
     ];
+  }
+
+  /**
+   * Get database info.
+   *
+   * @return array
+   *  The info about the database.
+   */
+  private function getDatabaseInfo() {
+    $options = $this->database->getConnectionOptions();
+    $results = $this->database->query("SELECT TABLE_NAME AS `table`,
+    ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024) AS `size`
+    FROM information_schema.TABLES WHERE TABLE_SCHEMA = '" . $options['database'] . "'
+    ORDER BY (DATA_LENGTH + INDEX_LENGTH) DESC");
+
+    $db = [
+      'version' => $this->database->version(),
+      'collation' => $options['collation'],
+    ];
+
+    foreach ($results as $result) {
+      $db['tables'][$result->table] = $result->size;
+    }
+
+    return $db;
   }
 
   /**
