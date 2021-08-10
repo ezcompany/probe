@@ -10,6 +10,7 @@ use Drupal\system\SystemManager;
 use Drupal\user\Entity\User;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Drupal\Core\File\FileSystem;
 
 /**
  * Class ProbeController.
@@ -22,15 +23,17 @@ class ProbeController extends ControllerBase {
   protected $currentRequest;
   protected $themeHandler;
   protected $systemManager;
+  protected $fileSystem;
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(SystemManager $systemManager, Connection $connection, RequestStack $requestStack, ThemeHandlerInterface $themeHandler) {
+  public function __construct(SystemManager $systemManager, Connection $connection, RequestStack $requestStack, ThemeHandlerInterface $themeHandler, FileSystem $file_system) {
     $this->database = $connection;
     $this->systemManager = $systemManager;
     $this->currentRequest = $requestStack->getCurrentRequest();
     $this->themeHandler = $themeHandler;
+    $this->fileSystem = $file_system;
   }
 
   /**
@@ -41,7 +44,8 @@ class ProbeController extends ControllerBase {
       $container->get('system.manager'),
       $container->get('database'),
       $container->get('request_stack'),
-      $container->get('theme_handler')
+      $container->get('theme_handler'),
+      $container->get('file_system')
     );
   }
 
@@ -88,6 +92,8 @@ class ProbeController extends ControllerBase {
       'php_version' => phpversion(),
       'free_disk_space' => disk_free_space(DRUPAL_ROOT),
       'total_disk_space' => disk_total_space(DRUPAL_ROOT),
+      'public_dir_size' => $this->folderSize($this->fileSystem->realpath("public://")),
+      'private_dir_size' => $this->folderSize($this->fileSystem->realpath("private://")),
       'database' => $this->getDatabaseInfo(),
       'base_url' => $base_url,
       'num_users' => $this->getUsersPerStatus(),
@@ -119,6 +125,26 @@ class ProbeController extends ControllerBase {
     ];
 
     return $data;
+  }
+
+  /**
+   * Get the size of a specific directory.
+   *
+   * @param $dir
+   *  The directory.
+   *
+   * @return int
+   *   Size in bytes.
+   */
+  private function folderSize($dir)
+  {
+    $size = 0;
+
+    foreach (glob(rtrim($dir, '/').'/*', GLOB_NOSORT) as $each) {
+      $size += is_file($each) ? filesize($each) : $this->folderSize($each);
+    }
+
+    return $size;
   }
 
   /**
