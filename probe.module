@@ -80,6 +80,9 @@ function probe($variables) {
     'php_version' => phpversion(),
     'free_disk_space' => disk_free_space(DRUPAL_ROOT),
     'total_disk_space' => disk_total_space(DRUPAL_ROOT),
+    'public_dir_size' => _probe_folder_size(drupal_realpath("public://")),
+    'private_dir_size' => _probe_folder_size(drupal_realpath("private://")),
+    'database' => _probe_get_database_info(),
     'base_url' => $GLOBALS['base_url'],
     'num_users' => _probe_users(),
     'num_users_roles' => _probe_users_roles(),
@@ -210,6 +213,51 @@ function probe($variables) {
   drupal_alter('probe_metadata', $data);
 
   return $data;
+}
+
+/**
+ * Get the size of a specific directory.
+ *
+ * @param $dir
+ *  The directory.
+ *
+ * @return int
+ *   Size in bytes.
+ */
+function _probe_folder_size($dir) {
+  $size = 0;
+
+  foreach (glob(rtrim($dir, '/').'/*', GLOB_NOSORT) as $each) {
+    $size += is_file($each) ? filesize($each) : _probe_folder_size($each);
+  }
+
+  return $size;
+}
+
+/**
+ * Get database info.
+ *
+ * @return array
+ *  The info about the database.
+ */
+function _probe_get_database_info() {
+  global $databases;
+
+  $results = db_query("SELECT TABLE_NAME AS `table`,
+    ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024) AS `size`
+    FROM information_schema.TABLES WHERE TABLE_SCHEMA = '" . $databases['default']['default']['database'] . "'
+    ORDER BY (DATA_LENGTH + INDEX_LENGTH) DESC")->fetchAll();
+
+  $db = [
+    'version' => Database::getConnection()->version(),
+    'collation' => $databases['default']['default']['collation'],
+  ];
+
+  foreach ($results as $result) {
+    $db['tables'][$result->table] = $result->size;
+  }
+
+  return $db;
 }
 
 /**
