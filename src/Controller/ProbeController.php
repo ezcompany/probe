@@ -95,6 +95,7 @@ class ProbeController extends ControllerBase {
       'public_dir_size' => $this->folderSize($this->fileSystem->realpath("public://")),
       'private_dir_size' => $this->folderSize($this->fileSystem->realpath("private://")),
       'database' => $this->getDatabaseInfo(),
+      'watchdog' => $this->getWatchdogInfo(),
       'base_url' => $base_url,
       'num_users' => $this->getUsersPerStatus(),
       'num_users_roles' => $this->getUsersPerRole(),
@@ -209,6 +210,30 @@ class ProbeController extends ControllerBase {
     }
 
     return $db;
+  }
+
+  /**
+   * Get watchdog info.
+   *
+   * @return array
+   *  The info about the watchdog.
+   */
+  private function getWatchdogInfo() {
+    $watchdog = [];
+    $results = $this->database->select('watchdog', 'w')
+    ->fields('w', ['severity', 'timestamp'])
+    ->condition('timestamp', strtotime('-1 day'), '>')
+    ->execute()
+    ->fetchAll();
+
+    foreach ($results as $result) {
+      $watchdog[] = [
+        'severity' => $result->severity,
+        'timestamp' => $result->timestamp,
+      ];
+    }
+
+    return $watchdog;
   }
 
   /**
