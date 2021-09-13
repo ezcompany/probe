@@ -202,7 +202,6 @@ class ProbeController extends ControllerBase {
 
     $db = [
       'version' => $this->database->version(),
-      'collation' => $options['collation'],
     ];
 
     foreach ($results as $result) {
