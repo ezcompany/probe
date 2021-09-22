@@ -79,6 +79,7 @@ class ProbeController extends ControllerBase {
     $moduleList = $this->moduleHandler()->getModuleList();
 
     $rootUser = User::load(1);
+    isset($variables['watchdogtime']) ? $time = $variables['watchdogtime'] : $time = 0;
     $users = [
       'root' => [
         'name' => $rootUser->getDisplayName(),
@@ -95,7 +96,7 @@ class ProbeController extends ControllerBase {
       'public_dir_size' => $this->folderSize($this->fileSystem->realpath("public://")),
       'private_dir_size' => $this->folderSize($this->fileSystem->realpath("private://")),
       'database' => $this->getDatabaseInfo(),
-      'watchdog' => $this->getWatchdogInfo(),
+      'watchdog' => $this->getWatchdogInfo($time),
       'base_url' => $base_url,
       'num_users' => $this->getUsersPerStatus(),
       'num_users_roles' => $this->getUsersPerRole(),
@@ -217,13 +218,19 @@ class ProbeController extends ControllerBase {
    * @return array
    *  The info about the watchdog.
    */
-  private function getWatchdogInfo() {
+  private function getWatchdogInfo($time = 0) {
     $watchdog = [];
-    $results = $this->database->select('watchdog', 'w')
-    ->fields('w', ['severity', 'timestamp'])
-    ->condition('timestamp', strtotime('-1 day'), '>')
-    ->execute()
-    ->fetchAll();
+    $query = $this->database->select('watchdog', 'w');
+    $query->fields('w', ['severity', 'timestamp']);
+
+    if ($time > 0) {
+      $query->condition('timestamp', $time, '>');
+    }
+    else {
+      $query->condition('timestamp', strtotime('-1 day'), '>');
+    }
+
+    $results = $query->execute()->fetchAll();
 
     foreach ($results as $result) {
       $watchdog[] = [
