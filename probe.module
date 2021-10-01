@@ -70,6 +70,8 @@ function probe($variables) {
     return $access;
   }
 
+  isset($variables['watchdogtime']) ? $watchdogtime = $variables['watchdogtime'] : $watchdogtime = 0;
+
   variable_set('probe_last_probed', REQUEST_TIME);
   watchdog('probe', 'Just got probed by @ip', array('@ip' => ip_address()), WATCHDOG_INFO);
 
@@ -83,6 +85,7 @@ function probe($variables) {
     'public_dir_size' => _probe_folder_size(drupal_realpath("public://")),
     'private_dir_size' => _probe_folder_size(drupal_realpath("private://")),
     'database' => _probe_get_database_info(),
+    'watchdog' => _probe_get_watchdog_info($watchdogtime),
     'base_url' => $GLOBALS['base_url'],
     'num_users' => _probe_users(),
     'num_users_roles' => _probe_users_roles(),
@@ -213,6 +216,37 @@ function probe($variables) {
   drupal_alter('probe_metadata', $data);
 
   return $data;
+}
+
+/**
+ * Get watchdog info.
+ *
+ * @return array
+ *  The info about the watchdog.
+ */
+function _probe_get_watchdog_info($time = 0) {
+  $watchdog = [];
+
+  $query = db_select('watchdog', 'w');
+  $query->fields('w', ['severity', 'timestamp']);
+
+  if ($time > 0) {
+    $query->condition('timestamp', $time, '>');
+  }
+  else {
+    $query->condition('timestamp', strtotime('-1 day'), '>');
+  }
+
+  $results = $query->execute()->fetchAll();
+
+  foreach ($results as $result) {
+    $watchdog[] = [
+      'severity' => $result->severity,
+      'timestamp' => $result->timestamp,
+    ];
+  }
+
+  return $watchdog;
 }
 
 /**
