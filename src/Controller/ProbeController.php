@@ -462,7 +462,7 @@ class ProbeController extends ControllerBase {
     foreach ($modules as $module => $filename) {
       // Check if all modules have ran their updates.
       $updates = drupal_get_schema_versions($module);
-      if ($updates !== FALSE) {
+      if (!empty($updates)) {
         $default = drupal_get_installed_schema_version($module);
         if (max($updates) > $default) {
           $modUpdates[] = $module;
