@@ -218,7 +218,7 @@ class ProbeController extends ControllerBase {
    * @return array
    *  The info about the watchdog.
    */
-  private function getWatchdogInfo($time = 0) {
+  protected function getWatchdogInfo($time = 0) {
     $watchdog = [];
     $query = $this->database->select('watchdog', 'w');
     $query->fields('w', ['severity', 'timestamp']);
