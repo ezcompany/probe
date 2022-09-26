@@ -443,6 +443,10 @@ class ProbeController extends ControllerBase {
         'info' => $systemInfo[$module->getName()],
         'path' => DRUPAL_ROOT . '/' . $module->getPath(),
       ];
+      // Make sure we don't send invalid values for modules with no version.
+      if (is_null($detailedModules[$module->getName()]['info']['version'])) {
+        $detailedModules[$module->getName()]['info']['version'] = '';
+      }
     }
     return $detailedModules;
   }
