@@ -465,9 +465,9 @@ class ProbeController extends ControllerBase {
     $modUpdates = [];
     foreach ($modules as $module => $filename) {
       // Check if all modules have ran their updates.
-      $updates = drupal_get_schema_versions($module);
+      $updates = \Drupal::service('update.update_hook_registry')->getAvailableUpdates($module);
       if (!empty($updates)) {
-        $default = drupal_get_installed_schema_version($module);
+        $default = \Drupal::service('update.update_hook_registry')->getInstalledVersion((string) $module);
         if (max($updates) > $default) {
           $modUpdates[] = $module;
         }
